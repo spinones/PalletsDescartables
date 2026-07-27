@@ -657,14 +657,33 @@ async function abrirDetalle(correlativo) {
 
   const actions = document.getElementById('detActions');
   actions.innerHTML = '';
-  if (session.rol === 'admin' && r.pallet.Estado === 'Abierto') {
-    const btn = document.createElement('button');
-    btn.className = 'btn btn-danger';
-    btn.textContent = 'Cerrar pallet';
-    btn.onclick = () => cerrarPallet(r.pallet.Correlativo);
-    actions.appendChild(btn);
+  if (session.rol === 'admin') {
+    if (r.pallet.Estado === 'Abierto') {
+      const btnCerrar = document.createElement('button');
+      btnCerrar.className = 'btn btn-danger';
+      btnCerrar.style.marginBottom = '10px';
+      btnCerrar.textContent = 'Cerrar pallet';
+      btnCerrar.onclick = () => cerrarPallet(r.pallet.Correlativo);
+      actions.appendChild(btnCerrar);
+    }
+    const btnEliminar = document.createElement('button');
+    btnEliminar.className = 'btn btn-ghost';
+    btnEliminar.style.color = 'var(--danger)';
+    btnEliminar.style.borderColor = 'var(--danger)';
+    btnEliminar.textContent = 'Eliminar pallet completo';
+    btnEliminar.onclick = () => eliminarPalletCompleto(r.pallet.Correlativo);
+    actions.appendChild(btnEliminar);
   }
   openSheet();
+}
+
+async function eliminarPalletCompleto(correlativo) {
+  if (!confirm(`¿Eliminar el pallet ${correlativo} y TODOS sus items? Esta acción no se puede deshacer.`)) return;
+  const r = await api('eliminarPallet', { correlativo });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Pallet eliminado');
+  closeSheet();
+  loadPallets();
 }
 
 async function editarItem(id, eanActual, cantidadActual) {
@@ -801,7 +820,12 @@ function setManualMode(m) {
 
 function buscarManual() {
   const val = document.getElementById('manualCodigo').value.trim();
-  if (val) procesarCodigo(val, manualMode);
+  if (!val) return;
+  // Si contiene letras, es un SKU sin importar qué chip esté activo (evita el error típico
+  // de dejar el chip en "EAN" y escribir un SKU).
+  const esNumerico = /^\d+$/.test(val);
+  const tipoEfectivo = esNumerico ? manualMode : 'sku';
+  procesarCodigo(val, tipoEfectivo);
 }
 
 async function procesarCodigo(codigo, tipo) {

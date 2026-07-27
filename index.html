@@ -359,8 +359,12 @@ input,select{font-family:inherit;}
       <div class="fab-row">
         <button class="btn btn-primary" id="btnStartScan" onclick="toggleScanner()">Iniciar cámara</button>
       </div>
+      <div class="filters" style="margin-bottom:8px;">
+        <button class="chip active" id="modeEAN" onclick="setManualMode('ean')">Buscar por EAN</button>
+        <button class="chip" id="modeSKU" onclick="setManualMode('sku')">Buscar por SKU</button>
+      </div>
       <div class="scan-manual">
-        <input id="manualEAN" type="text" inputmode="numeric" placeholder="o ingresa el EAN manualmente">
+        <input id="manualCodigo" type="text" placeholder="o ingresa el EAN manualmente" onkeydown="if(event.key==='Enter')buscarManual()">
         <button class="btn btn-ghost" style="width:auto;padding:12px 16px;" onclick="buscarManual()">Buscar</button>
       </div>
       <div id="previewArea"></div>
@@ -664,24 +668,37 @@ function stopScanner() {
   document.getElementById('btnStartScan').textContent = 'Iniciar cámara';
 }
 
-function buscarManual() {
-  const val = document.getElementById('manualEAN').value.trim();
-  if (val) procesarCodigo(val);
+let manualMode = 'ean';
+function setManualMode(m) {
+  manualMode = m;
+  document.getElementById('modeEAN').classList.toggle('active', m === 'ean');
+  document.getElementById('modeSKU').classList.toggle('active', m === 'sku');
+  const input = document.getElementById('manualCodigo');
+  input.placeholder = m === 'ean' ? 'o ingresa el EAN manualmente' : 'o ingresa el SKU manualmente';
+  input.inputMode = m === 'ean' ? 'numeric' : 'text';
+  input.value = '';
 }
 
-async function procesarCodigo(codigo) {
-  const r = await api('buscarProducto', { ean: codigo });
+function buscarManual() {
+  const val = document.getElementById('manualCodigo').value.trim();
+  if (val) procesarCodigo(val, manualMode);
+}
+
+async function procesarCodigo(codigo, tipo) {
+  tipo = tipo || 'ean';
+  const payload = tipo === 'sku' ? { sku: codigo } : { ean: codigo };
+  const r = await api('buscarProducto', payload);
   const area = document.getElementById('previewArea');
   if (!r.ok) {
-    area.innerHTML = `<div class="preview-card" style="border-color:var(--danger);"><div class="p-name">EAN no encontrado</div><div class="p-code">${codigo}</div></div>`;
+    area.innerHTML = `<div class="preview-card" style="border-color:var(--danger);"><div class="p-name">${tipo === 'sku' ? 'SKU' : 'EAN'} no encontrado</div><div class="p-code">${codigo}</div></div>`;
     return;
   }
-  ultimoEANEncontrado = codigo;
+  ultimoEANEncontrado = r.ean;
   cantidadActual = 1;
   area.innerHTML = `
     <div class="preview-card">
       <div class="p-name">${r.nombre}</div>
-      <div class="p-code">${codigo} · SKU ${r.sku || 's/sku'}</div>
+      <div class="p-code">${r.ean} · SKU ${r.sku || 's/sku'}</div>
       <div class="qty-stepper">
         <button onclick="cambiarCantidad(-1)">−</button>
         <div class="qval" id="qtyVal">1</div>
@@ -689,7 +706,7 @@ async function procesarCodigo(codigo) {
       </div>
       <button class="btn btn-primary" onclick="confirmarAgregar()">Agregar al pallet</button>
     </div>`;
-  document.getElementById('manualEAN').value = '';
+  document.getElementById('manualCodigo').value = '';
 }
 
 function cambiarCantidad(delta) {

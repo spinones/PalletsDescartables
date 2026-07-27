@@ -793,10 +793,34 @@ async function loadEscanear() {
 
 function toggleScanner() {
   if (scannerRunning) { stopScanner(); return; }
-  scanner = new Html5Qrcode('reader');
+  getAudioCtx(); // desbloquea el audio en iOS dentro del gesto de tap del usuario
+  scanner = new Html5Qrcode('reader', {
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+      Html5QrcodeSupportedFormats.CODE_128,
+      Html5QrcodeSupportedFormats.CODE_39
+    ],
+    verbose: false
+  });
+  const camaraConfig = {
+    facingMode: 'environment',
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    advanced: [{ focusMode: 'continuous' }] // pide enfoque continuo; si el equipo no lo soporta, se ignora sin error
+  };
   scanner.start(
-    { facingMode: 'environment' },
-    { fps: 10, qrbox: 220 },
+    camaraConfig,
+    {
+      fps: 15,
+      // Caja rectangular (no cuadrada): un código EAN es ancho y bajo, calza mejor
+      // en un recuadro horizontal que en uno cuadrado, sobre todo en pantallas chicas.
+      qrbox: { width: 280, height: 130 },
+      aspectRatio: 1.777778,
+      disableFlip: false
+    },
     (decodedText) => { procesarCodigo(decodedText); stopScanner(); },
     () => {}
   ).then(() => {
@@ -823,6 +847,7 @@ function setManualMode(m) {
 }
 
 function buscarManual() {
+  getAudioCtx();
   const val = document.getElementById('manualCodigo').value.trim();
   if (!val) return;
   // Si contiene letras, es un SKU sin importar qué chip esté activo (evita el error típico
@@ -832,15 +857,59 @@ function buscarManual() {
   procesarCodigo(val, tipoEfectivo);
 }
 
+/* ======================= FEEDBACK SONORO / VIBRACIÓN ======================= */
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    audioCtx = new AC();
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+
+function tono(ctx, freq, tipoOnda, inicio, duracion, volumen) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = tipoOnda;
+  osc.frequency.value = freq;
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  gain.gain.setValueAtTime(volumen, ctx.currentTime + inicio);
+  osc.start(ctx.currentTime + inicio);
+  osc.stop(ctx.currentTime + inicio + duracion);
+}
+
+function feedbackExito() {
+  const ctx = getAudioCtx();
+  if (ctx) {
+    tono(ctx, 880, 'sine', 0, 0.09, 0.22);
+    tono(ctx, 1320, 'sine', 0.1, 0.12, 0.22);
+  }
+  if (navigator.vibrate) navigator.vibrate(70);
+}
+
+function feedbackRechazo() {
+  const ctx = getAudioCtx();
+  if (ctx) {
+    tono(ctx, 160, 'square', 0, 0.12, 0.18);
+    tono(ctx, 160, 'square', 0.16, 0.12, 0.18);
+  }
+  if (navigator.vibrate) navigator.vibrate([90, 70, 90]);
+}
+
 async function procesarCodigo(codigo, tipo) {
   tipo = tipo || 'ean';
   const payload = tipo === 'sku' ? { sku: codigo } : { ean: codigo };
   const r = await api('buscarProducto', payload);
   const area = document.getElementById('previewArea');
   if (!r.ok) {
+    feedbackRechazo();
     area.innerHTML = `<div class="preview-card" style="border-color:var(--danger);"><div class="p-name">${tipo === 'sku' ? 'SKU' : 'EAN'} no encontrado</div><div class="p-code">${codigo}</div></div>`;
     return;
   }
+  feedbackExito();
   ultimoEANEncontrado = r.ean;
   cantidadActual = 1;
   area.innerHTML = `

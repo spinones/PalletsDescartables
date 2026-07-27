@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pallets Merma/Reacondicionable — ET Brands</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="iconos/icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="iconos/icon-180.png">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Pallets ETB">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#000000;
+  --gray:#878786;
+  --gray-dark:#4a4a49;
+  --gray-light:#d8d6d2;
+  --orange:#E94E1A;
+  --orange-dark:#B93D14;
+  --bg:#F4F2EE;
+  --surface:#FFFFFF;
+  --line:#E4E1DB;
+  --danger:#A93226;
+  --font-display:'Space Grotesk',sans-serif;
+  --font-body:'Inter',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--bg);
+  color:var(--ink);
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior:none;
+}
+#app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative;padding-bottom:24px;}
+button{font-family:inherit;cursor:pointer;}
+input,select{font-family:inherit;}
+
+/* ---------- LOGIN ---------- */
+#loginView{
+  min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+  align-items:center;background:var(--ink);padding:32px 24px;
+}
+.login-logo{display:flex;align-items:center;gap:2px;margin-bottom:8px;}
+.login-logo svg{width:64px;height:64px;}
+.login-title{font-family:var(--font-display);font-weight:700;font-size:22px;letter-spacing:.5px;color:#fff;margin:0 0 2px;}
+.login-sub{font-family:var(--font-mono);font-size:12px;color:var(--orange);text-transform:uppercase;letter-spacing:1.5px;margin:0 0 40px;}
+.login-card{background:var(--surface);border-radius:4px;padding:28px 24px;width:100%;max-width:340px;}
+.field{margin-bottom:16px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--gray-dark);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.field input{width:100%;padding:12px 14px;border:1.5px solid var(--line);border-radius:3px;font-size:15px;background:#fff;}
+.field input:focus{outline:none;border-color:var(--orange);}
+.btn{
+  width:100%;padding:13px;border:none;border-radius:3px;font-weight:600;font-size:14px;
+  letter-spacing:.3px;transition:transform .08s ease;
+}
+.btn:active{transform:scale(.98);}
+.btn-primary{background:var(--orange);color:#fff;}
+.btn-primary:hover{background:var(--orange-dark);}
+.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line);}
+.btn-danger{background:var(--danger);color:#fff;}
+.login-error{color:var(--danger);font-size:13px;margin-top:10px;text-align:center;min-height:16px;}
+
+/* ---------- TOP BAR ---------- */
+#topbar{
+  position:sticky;top:0;z-index:20;background:var(--ink);color:#fff;
+  display:flex;align-items:center;justify-content:space-between;padding:14px 16px;
+}
+#hamburger{background:none;border:none;padding:6px;display:flex;flex-direction:column;gap:4px;}
+#hamburger span{display:block;width:22px;height:2px;background:#fff;}
+#topbar .brand{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.3px;}
+#topbar .brand em{color:var(--orange);font-style:normal;}
+#topbar .rolebadge{font-family:var(--font-mono);font-size:10px;background:var(--orange);color:#fff;padding:3px 7px;border-radius:2px;text-transform:uppercase;}
+
+/* ---------- DRAWER ---------- */
+#drawerOverlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:29;display:none;}
+#drawer{
+  position:fixed;top:0;left:0;height:100vh;width:78%;max-width:300px;background:var(--ink);
+  z-index:30;transform:translateX(-100%);transition:transform .25s ease;display:flex;flex-direction:column;
+}
+#drawer.open{transform:translateX(0);}
+#drawerOverlay.open{display:block;}
+.drawer-head{padding:22px 20px 16px;border-bottom:1px solid #2a2a2a;}
+.drawer-head .name{font-family:var(--font-display);font-weight:700;color:#fff;font-size:16px;}
+.drawer-head .rol{font-family:var(--font-mono);font-size:11px;color:var(--orange);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+.drawer-nav{flex:1;padding:10px 0;}
+.drawer-item{
+  display:flex;align-items:center;gap:12px;padding:14px 20px;color:#d8d6d2;
+  font-size:14.5px;font-weight:500;border:none;background:none;width:100%;text-align:left;
+}
+.drawer-item.active{background:rgba(233,78,26,.15);color:#fff;border-left:3px solid var(--orange);}
+.drawer-item .ico{font-family:var(--font-mono);font-size:13px;color:var(--gray);width:20px;}
+.drawer-item.active .ico{color:var(--orange);}
+.drawer-foot{padding:16px 20px;border-top:1px solid #2a2a2a;}
+.drawer-foot button{width:100%;background:none;border:1.5px solid #3a3a3a;color:var(--gray);padding:10px;border-radius:3px;font-size:13px;}
+
+/* ---------- VIEWS ---------- */
+.view{padding:18px 16px 8px;display:none;}
+.view.active{display:block;}
+.view-title{font-family:var(--font-display);font-weight:700;font-size:20px;margin:2px 0 18px;display:flex;align-items:baseline;gap:8px;}
+.view-title .tag{font-family:var(--font-mono);font-size:11px;color:var(--orange);background:rgba(233,78,26,.1);padding:2px 7px;border-radius:2px;}
+
+/* KPI grid */
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.kpi-card{background:var(--surface);border-radius:4px;padding:16px 14px;border:1px solid var(--line);}
+.kpi-card .num{font-family:var(--font-mono);font-weight:700;font-size:28px;line-height:1;}
+.kpi-card .num.orange{color:var(--orange);}
+.kpi-card .lbl{font-size:11.5px;color:var(--gray-dark);margin-top:6px;text-transform:uppercase;letter-spacing:.4px;}
+.chart-card{background:var(--surface);border-radius:4px;padding:16px;border:1px solid var(--line);margin-bottom:18px;}
+.chart-card h3{font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--gray-dark);margin:0 0 12px;font-weight:600;}
+.movs{background:var(--surface);border-radius:4px;border:1px solid var(--line);overflow:hidden;}
+.mov-row{display:flex;justify-content:space-between;padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;}
+.mov-row:last-child{border-bottom:none;}
+.mov-row .m-prod{font-weight:500;}
+.mov-row .m-meta{font-family:var(--font-mono);font-size:11px;color:var(--gray);}
+
+/* Pallet ticket card — signature element */
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;}
+.chip{
+  border:1.5px solid var(--line);background:var(--surface);border-radius:20px;padding:6px 13px;
+  font-size:12.5px;font-weight:500;color:var(--gray-dark);
+}
+.chip.active{background:var(--ink);color:#fff;border-color:var(--ink);}
+.pallet-list{display:flex;flex-direction:column;gap:12px;}
+.ticket{
+  position:relative;background:var(--surface);border:1px solid var(--line);border-radius:4px;
+  display:flex;overflow:hidden;
+}
+.ticket .stripe{width:8px;flex-shrink:0;}
+.ticket .stripe.MER{background:var(--orange);}
+.ticket .stripe.REA{background:var(--gray-dark);}
+.ticket .hole{
+  position:absolute;left:-1px;top:50%;width:12px;height:12px;background:var(--bg);
+  border:1px solid var(--line);border-radius:50%;transform:translateY(-50%);
+}
+.ticket-body{flex:1;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;}
+.ticket-left .corr{font-family:var(--font-mono);font-weight:700;font-size:17px;letter-spacing:.5px;}
+.ticket-left .meta{font-size:11.5px;color:var(--gray-dark);margin-top:3px;}
+.ticket-right{text-align:right;}
+.status-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.status-dot.abierto{color:var(--orange);}
+.status-dot.cerrado{color:var(--gray-dark);}
+.status-dot::before{content:'';width:7px;height:7px;border-radius:50%;background:currentColor;}
+.ticket-right .units{font-family:var(--font-mono);font-size:15px;font-weight:700;margin-top:5px;}
+.ticket-right .units small{font-family:var(--font-body);font-weight:400;color:var(--gray-dark);font-size:10px;text-transform:uppercase;}
+
+.fab-row{display:flex;gap:10px;margin-bottom:16px;}
+.fab-row .btn{flex:1;}
+
+/* Modal / detail sheet */
+#sheetOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:39;display:none;}
+#sheetOverlay.open{display:block;}
+#detailSheet{
+  position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;background:var(--surface);
+  z-index:40;border-radius:14px 14px 0 0;transform:translateY(100%);transition:transform .25s ease;
+  max-height:82vh;overflow-y:auto;padding:20px 18px 28px;
+}
+#detailSheet.open{transform:translateY(0);}
+.sheet-handle{width:36px;height:4px;background:var(--line);border-radius:2px;margin:0 auto 16px;}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;}
+.sheet-head .corr{font-family:var(--font-mono);font-weight:700;font-size:20px;}
+.item-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;}
+.item-row:last-child{border-bottom:none;}
+.item-row .i-name{font-weight:500;}
+.item-row .i-code{font-family:var(--font-mono);font-size:11px;color:var(--gray);}
+.item-row .i-qty{font-family:var(--font-mono);font-weight:700;}
+.empty-note{color:var(--gray);font-size:13px;padding:20px 0;text-align:center;}
+
+/* Escanear */
+.scan-target-box{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px;margin-bottom:16px;}
+.scan-target-box label{font-size:11px;text-transform:uppercase;color:var(--gray-dark);font-weight:600;letter-spacing:.4px;}
+.scan-target-box select{width:100%;margin-top:8px;padding:11px;border:1.5px solid var(--line);border-radius:3px;font-size:14.5px;background:#fff;}
+#readerBox{background:#000;border-radius:4px;overflow:hidden;margin-bottom:14px;min-height:220px;position:relative;}
+#reader{width:100%;}
+.scan-manual{display:flex;gap:8px;margin-bottom:14px;}
+.scan-manual input{flex:1;padding:12px;border:1.5px solid var(--line);border-radius:3px;font-family:var(--font-mono);font-size:14px;}
+.preview-card{background:var(--surface);border:1px solid var(--orange);border-radius:4px;padding:16px;margin-bottom:14px;}
+.preview-card .p-name{font-weight:600;font-size:15px;}
+.preview-card .p-code{font-family:var(--font-mono);font-size:12px;color:var(--gray-dark);margin-top:3px;}
+.qty-stepper{display:flex;align-items:center;gap:14px;margin:14px 0;}
+.qty-stepper button{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line);background:#fff;font-size:18px;font-weight:700;}
+.qty-stepper .qval{font-family:var(--font-mono);font-size:22px;font-weight:700;min-width:36px;text-align:center;}
+.scan-log{margin-top:20px;}
+.scan-log h4{font-size:12px;text-transform:uppercase;color:var(--gray-dark);letter-spacing:.5px;margin-bottom:8px;}
+
+/* Consultar */
+.search-box{display:flex;gap:8px;margin-bottom:16px;}
+.search-box input{flex:1;padding:12px 14px;border:1.5px solid var(--line);border-radius:3px;font-size:14.5px;}
+.result-group h4{font-size:11.5px;text-transform:uppercase;color:var(--gray-dark);letter-spacing:.5px;margin:16px 0 8px;}
+
+/* Usuarios */
+.user-row{display:flex;justify-content:space-between;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:12px 14px;margin-bottom:8px;}
+.user-row .u-name{font-weight:600;font-size:14px;}
+.user-row .u-rol{font-family:var(--font-mono);font-size:10px;text-transform:uppercase;padding:2px 8px;border-radius:2px;background:var(--bg);color:var(--gray-dark);}
+.user-row .u-rol.admin{background:rgba(233,78,26,.12);color:var(--orange-dark);}
+
+.toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;
+  padding:12px 20px;border-radius:4px;font-size:13.5px;z-index:60;opacity:0;transition:all .25s ease;pointer-events:none;
+  max-width:88%;text-align:center;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast.err{background:var(--danger);}
+
+.section-gap{height:6px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOGIN -->
+  <div id="loginView">
+    <div class="login-logo">
+      <img src="iconos/icon-192.png" alt="ET Brands" style="width:88px;height:88px;">
+    </div>
+    <p class="login-title">ET BRANDS</p>
+    <p class="login-sub">Pallets Merma &amp; Reacondicionable</p>
+    <div class="login-card">
+      <div class="field">
+        <label>Usuario</label>
+        <input id="loginUser" type="text" autocomplete="username" placeholder="tu usuario">
+      </div>
+      <div class="field">
+        <label>Clave</label>
+        <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Ingresar</button>
+      <p class="login-error" id="loginError"></p>
+    </div>
+  </div>
+
+  <!-- APP SHELL -->
+  <div id="shell" style="display:none;">
+    <div id="topbar">
+      <button id="hamburger" onclick="toggleDrawer(true)"><span></span><span></span><span></span></button>
+      <div class="brand">ET<em>+</em>BRANDS</div>
+      <div class="rolebadge" id="roleBadge">—</div>
+    </div>
+
+    <div id="drawerOverlay" onclick="toggleDrawer(false)"></div>
+    <div id="drawer">
+      <div class="drawer-head">
+        <div class="name" id="drawerName">—</div>
+        <div class="rol" id="drawerRol">—</div>
+      </div>
+      <div class="drawer-nav">
+        <button class="drawer-item" data-view="dashboard" onclick="goView('dashboard')"><span class="ico">01</span>Dashboard</button>
+        <button class="drawer-item" data-view="pallets" onclick="goView('pallets')"><span class="ico">02</span>Pallets</button>
+        <button class="drawer-item" data-view="escanear" onclick="goView('escanear')"><span class="ico">03</span>Escanear</button>
+        <button class="drawer-item" data-view="consultar" onclick="goView('consultar')"><span class="ico">04</span>Consultar</button>
+        <button class="drawer-item" data-view="usuarios" id="navUsuarios" onclick="goView('usuarios')" style="display:none;"><span class="ico">05</span>Usuarios</button>
+      </div>
+      <div class="drawer-foot"><button onclick="logout()">Cerrar sesión</button></div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view" id="view-dashboard">
+      <div class="view-title">Dashboard <span class="tag">hoy</span></div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="num orange" id="kpiAbiertos">—</div><div class="lbl">Pallets abiertos</div></div>
+        <div class="kpi-card"><div class="num" id="kpiCerrados">—</div><div class="lbl">Pallets cerrados</div></div>
+        <div class="kpi-card"><div class="num orange" id="kpiUnidMer">—</div><div class="lbl">Unidades merma</div></div>
+        <div class="kpi-card"><div class="num" id="kpiUnidRea">—</div><div class="lbl">Unidades reacond.</div></div>
+      </div>
+      <div class="chart-card">
+        <h3>Pallets por tipo</h3>
+        <canvas id="chartTipo" height="140"></canvas>
+      </div>
+      <div class="chart-card" style="margin-bottom:10px;">
+        <h3>Últimos movimientos</h3>
+        <div class="movs" id="ultimosMovs"><div class="empty-note">Cargando…</div></div>
+      </div>
+    </div>
+
+    <!-- PALLETS -->
+    <div class="view" id="view-pallets">
+      <div class="view-title">Pallets</div>
+      <div class="fab-row" id="adminCrearRow" style="display:none;">
+        <button class="btn btn-primary" onclick="crearPallet('MER')">+ Pallet Merma</button>
+        <button class="btn btn-ghost" onclick="crearPallet('REA')">+ Reacondicionable</button>
+      </div>
+      <div class="filters">
+        <button class="chip active" data-f="tipo" data-v="" onclick="setFiltro('tipo','')">Todos</button>
+        <button class="chip" data-f="tipo" data-v="MER" onclick="setFiltro('tipo','MER')">Merma</button>
+        <button class="chip" data-f="tipo" data-v="REA" onclick="setFiltro('tipo','REA')">Reacond.</button>
+      </div>
+      <div class="filters">
+        <button class="chip active" data-f="estado" data-v="" onclick="setFiltro('estado','')">Todos</button>
+        <button class="chip" data-f="estado" data-v="Abierto" onclick="setFiltro('estado','Abierto')">Abiertos</button>
+        <button class="chip" data-f="estado" data-v="Cerrado" onclick="setFiltro('estado','Cerrado')">Cerrados</button>
+      </div>
+      <div class="pallet-list" id="palletList"><div class="empty-note">Cargando…</div></div>
+    </div>
+
+    <!-- ESCANEAR -->
+    <div class="view" id="view-escanear">
+      <div class="view-title">Escanear</div>
+      <div class="scan-target-box">
+        <label>Pallet activo</label>
+        <select id="palletSelect"></select>
+      </div>
+      <div id="readerBox"><div id="reader"></div></div>
+      <div class="fab-row">
+        <button class="btn btn-primary" id="btnStartScan" onclick="toggleScanner()">Iniciar cámara</button>
+      </div>
+      <div class="scan-manual">
+        <input id="manualEAN" type="text" inputmode="numeric" placeholder="o ingresa el EAN manualmente">
+        <button class="btn btn-ghost" style="width:auto;padding:12px 16px;" onclick="buscarManual()">Buscar</button>
+      </div>
+      <div id="previewArea"></div>
+      <div class="scan-log">
+        <h4>Escaneado en esta sesión</h4>
+        <div id="scanLog"><div class="empty-note">Nada escaneado aún</div></div>
+      </div>
+    </div>
+
+    <!-- CONSULTAR -->
+    <div class="view" id="view-consultar">
+      <div class="view-title">Consultar</div>
+      <div class="search-box">
+        <input id="consultaInput" type="text" placeholder="Correlativo, SKU o EAN" onkeydown="if(event.key==='Enter')consultar()">
+        <button class="btn btn-primary" style="width:auto;padding:12px 18px;" onclick="consultar()">Buscar</button>
+      </div>
+      <div id="consultaResultados"></div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div class="view" id="view-usuarios">
+      <div class="view-title">Usuarios</div>
+      <div class="fab-row">
+        <button class="btn btn-primary" onclick="mostrarNuevoUsuario()">+ Nuevo usuario</button>
+      </div>
+      <div id="nuevoUsuarioForm" style="display:none;" class="login-card" style="margin-bottom:16px;">
+        <div class="field"><label>Usuario</label><input id="nuUser" type="text"></div>
+        <div class="field"><label>Clave</label><input id="nuPass" type="password"></div>
+        <div class="field">
+          <label>Rol</label>
+          <select id="nuRol" style="width:100%;padding:11px;border:1.5px solid var(--line);border-radius:3px;">
+            <option value="operario">Operario</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" onclick="crearUsuario()">Crear usuario</button>
+      </div>
+      <div id="userList"></div>
+    </div>
+
+  </div>
+
+  <!-- DETAIL SHEET -->
+  <div id="sheetOverlay" onclick="closeSheet()"></div>
+  <div id="detailSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-head">
+      <div>
+        <div class="corr" id="detCorr">—</div>
+        <div class="meta" id="detMeta" style="font-size:12px;color:var(--gray-dark);margin-top:4px;"></div>
+      </div>
+      <button class="chip" onclick="closeSheet()" style="border:none;font-size:20px;padding:0 6px;">✕</button>
+    </div>
+    <div id="detItems"></div>
+    <div id="detActions" style="margin-top:16px;"></div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+/* ======================= CONFIG ======================= */
+// Reemplaza esta URL por la de tu Web App de Apps Script una vez desplegada.
+const API_URL = 'https://script.google.com/macros/s/AKfycbyX9JHLyf-BWvzIKgC-TqjXO95pRk18mIWakqjpO-XseGPiNBP0eEJoxbnYhPzrHqrA/exec';
+
+/* ======================= ESTADO ======================= */
+let session = JSON.parse(localStorage.getItem('etb_reacon_session') || 'null');
+let currentView = 'dashboard';
+let filtroTipo = '', filtroEstado = '';
+let scanner = null, scannerRunning = false;
+let ultimoEANEncontrado = null, cantidadActual = 1;
+let palletsAbiertosCache = [];
+
+/* ======================= UTIL ======================= */
+async function api(action, payload) {
+  const body = Object.assign({ action, usuario: session ? session.usuario : '' }, payload || {});
+  const res = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function toast(msg, isErr) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isErr ? ' err' : '');
+  setTimeout(() => t.className = 'toast', 2200);
+}
+
+function fmtFecha(d) {
+  if (!d) return '—';
+  const dt = new Date(d);
+  return dt.toLocaleDateString('es-CL', { day: '2-digit', month: '2-digit' }) + ' ' +
+         dt.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ======================= LOGIN ======================= */
+async function doLogin() {
+  const usuario = document.getElementById('loginUser').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = '';
+  if (!usuario || !pass) { errEl.textContent = 'Completa usuario y clave'; return; }
+  const hash = await sha256(pass);
+  const r = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action: 'login', usuario, passwordHash: hash })
+  }).then(x => x.json()).catch(() => ({ ok: false, error: 'No se pudo conectar con el servidor' }));
+
+  if (!r.ok) { errEl.textContent = r.error || 'Error de login'; return; }
+  session = { usuario: r.usuario, rol: r.rol };
+  localStorage.setItem('etb_reacon_session', JSON.stringify(session));
+  startApp();
+}
+
+function logout() {
+  localStorage.removeItem('etb_reacon_session');
+  location.reload();
+}
+
+/* ======================= NAV ======================= */
+function toggleDrawer(open) {
+  document.getElementById('drawer').classList.toggle('open', open);
+  document.getElementById('drawerOverlay').classList.toggle('open', open);
+}
+
+function goView(view) {
+  if (view === 'usuarios' && session.rol !== 'admin') return;
+  currentView = view;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('.drawer-item').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  toggleDrawer(false);
+  if (view === 'dashboard') loadDashboard();
+  if (view === 'pallets') loadPallets();
+  if (view === 'escanear') loadEscanear();
+  if (view === 'usuarios') loadUsuarios();
+  if (view === 'consultar') document.getElementById('consultaResultados').innerHTML = '';
+}
+
+function startApp() {
+  document.getElementById('loginView').style.display = 'none';
+  document.getElementById('shell').style.display = 'block';
+  document.getElementById('roleBadge').textContent = session.rol;
+  document.getElementById('drawerName').textContent = session.usuario;
+  document.getElementById('drawerRol').textContent = session.rol;
+  if (session.rol === 'admin') {
+    document.getElementById('navUsuarios').style.display = 'flex';
+    document.getElementById('adminCrearRow').style.display = 'flex';
+  }
+  goView('dashboard');
+}
+
+/* ======================= DASHBOARD ======================= */
+let chartInstance = null;
+async function loadDashboard() {
+  const r = await api('dashboard');
+  if (!r.ok) { toast(r.error, true); return; }
+  document.getElementById('kpiAbiertos').textContent = r.palletsAbiertos;
+  document.getElementById('kpiCerrados').textContent = r.palletsCerrados;
+  document.getElementById('kpiUnidMer').textContent = r.unidadesMer;
+  document.getElementById('kpiUnidRea').textContent = r.unidadesRea;
+
+  const ctx = document.getElementById('chartTipo');
+  if (chartInstance) chartInstance.destroy();
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Merma', 'Reacondicionable'],
+      datasets: [{ data: [r.palletsMer, r.palletsRea], backgroundColor: ['#E94E1A', '#4a4a49'], borderRadius: 4, maxBarThickness: 60 }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+  });
+
+  const cont = document.getElementById('ultimosMovs');
+  if (!r.ultimosMovimientos.length) { cont.innerHTML = '<div class="empty-note">Sin movimientos aún</div>'; return; }
+  cont.innerHTML = r.ultimosMovimientos.map(m => `
+    <div class="mov-row">
+      <div><div class="m-prod">${m.Producto || 'Producto sin identificar'}</div><div class="m-meta">${m.Correlativo} · ${m.Usuario}</div></div>
+      <div class="m-meta" style="text-align:right;">${m.Cantidad} un.<br>${fmtFecha(m.FechaHora)}</div>
+    </div>`).join('');
+}
+
+/* ======================= PALLETS ======================= */
+function setFiltro(campo, valor) {
+  if (campo === 'tipo') filtroTipo = valor; else filtroEstado = valor;
+  document.querySelectorAll(`.chip[data-f="${campo}"]`).forEach(c => c.classList.toggle('active', c.dataset.v === valor));
+  loadPallets();
+}
+
+async function loadPallets() {
+  const r = await api('listarPallets', { tipo: filtroTipo, estado: filtroEstado });
+  const cont = document.getElementById('palletList');
+  if (!r.ok) { toast(r.error, true); return; }
+  if (!r.pallets.length) { cont.innerHTML = '<div class="empty-note">No hay pallets con estos filtros</div>'; return; }
+  cont.innerHTML = r.pallets.map(p => `
+    <div class="ticket" onclick="abrirDetalle('${p.Correlativo}')">
+      <div class="stripe ${p.Tipo}"></div>
+      <div class="hole"></div>
+      <div class="ticket-body">
+        <div class="ticket-left">
+          <div class="corr">${p.Correlativo}</div>
+          <div class="meta">${p.CreadoPor} · ${fmtFecha(p.FechaCreacion)}</div>
+        </div>
+        <div class="ticket-right">
+          <span class="status-dot ${p.Estado.toLowerCase()}">${p.Estado}</span>
+          <div class="units">${p.TotalUnidades}<small> UN</small></div>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function crearPallet(tipo) {
+  const r = await api('crearPallet', { tipo });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Pallet ' + r.correlativo + ' creado');
+  loadPallets();
+}
+
+async function abrirDetalle(correlativo) {
+  const r = await api('detallePallet', { correlativo });
+  if (!r.ok) { toast(r.error, true); return; }
+  document.getElementById('detCorr').textContent = r.pallet.Correlativo;
+  document.getElementById('detMeta').textContent =
+    `${r.pallet.Tipo === 'MER' ? 'Merma' : 'Reacondicionable'} · ${r.pallet.Estado} · Creado por ${r.pallet.CreadoPor}`;
+
+  const itemsCont = document.getElementById('detItems');
+  itemsCont.innerHTML = r.items.length
+    ? r.items.map(it => `
+        <div class="item-row">
+          <div><div class="i-name">${it.Producto || 'Sin identificar'}</div><div class="i-code">${it.EAN} · ${it.SKU || 's/sku'}</div></div>
+          <div class="i-qty">${it.Cantidad}</div>
+        </div>`).join('')
+    : '<div class="empty-note">Sin items registrados</div>';
+
+  const actions = document.getElementById('detActions');
+  actions.innerHTML = '';
+  if (session.rol === 'admin' && r.pallet.Estado === 'Abierto') {
+    const btn = document.createElement('button');
+    btn.className = 'btn btn-danger';
+    btn.textContent = 'Cerrar pallet';
+    btn.onclick = () => cerrarPallet(r.pallet.Correlativo);
+    actions.appendChild(btn);
+  }
+  openSheet();
+}
+
+async function cerrarPallet(correlativo) {
+  const r = await api('cerrarPallet', { correlativo });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Pallet cerrado');
+  closeSheet();
+  loadPallets();
+}
+
+function openSheet() {
+  document.getElementById('sheetOverlay').classList.add('open');
+  document.getElementById('detailSheet').classList.add('open');
+}
+function closeSheet() {
+  document.getElementById('sheetOverlay').classList.remove('open');
+  document.getElementById('detailSheet').classList.remove('open');
+}
+
+/* ======================= ESCANEAR ======================= */
+async function loadEscanear() {
+  const r = await api('listarPallets', { estado: 'Abierto' });
+  if (!r.ok) { toast(r.error, true); return; }
+  palletsAbiertosCache = r.pallets;
+  const sel = document.getElementById('palletSelect');
+  sel.innerHTML = r.pallets.length
+    ? r.pallets.map(p => `<option value="${p.Correlativo}">${p.Correlativo} — ${p.Tipo === 'MER' ? 'Merma' : 'Reacondicionable'}</option>`).join('')
+    : '<option value="">No hay pallets abiertos</option>';
+}
+
+function toggleScanner() {
+  if (scannerRunning) { stopScanner(); return; }
+  scanner = new Html5Qrcode('reader');
+  scanner.start(
+    { facingMode: 'environment' },
+    { fps: 10, qrbox: 220 },
+    (decodedText) => { procesarCodigo(decodedText); stopScanner(); },
+    () => {}
+  ).then(() => {
+    scannerRunning = true;
+    document.getElementById('btnStartScan').textContent = 'Detener cámara';
+  }).catch(() => toast('No se pudo acceder a la cámara', true));
+}
+
+function stopScanner() {
+  if (scanner && scannerRunning) { scanner.stop().catch(() => {}); }
+  scannerRunning = false;
+  document.getElementById('btnStartScan').textContent = 'Iniciar cámara';
+}
+
+function buscarManual() {
+  const val = document.getElementById('manualEAN').value.trim();
+  if (val) procesarCodigo(val);
+}
+
+async function procesarCodigo(codigo) {
+  const r = await api('buscarProducto', { ean: codigo });
+  const area = document.getElementById('previewArea');
+  if (!r.ok) {
+    area.innerHTML = `<div class="preview-card" style="border-color:var(--danger);"><div class="p-name">EAN no encontrado</div><div class="p-code">${codigo}</div></div>`;
+    return;
+  }
+  ultimoEANEncontrado = codigo;
+  cantidadActual = 1;
+  area.innerHTML = `
+    <div class="preview-card">
+      <div class="p-name">${r.nombre}</div>
+      <div class="p-code">${codigo} · SKU ${r.sku || 's/sku'}</div>
+      <div class="qty-stepper">
+        <button onclick="cambiarCantidad(-1)">−</button>
+        <div class="qval" id="qtyVal">1</div>
+        <button onclick="cambiarCantidad(1)">+</button>
+      </div>
+      <button class="btn btn-primary" onclick="confirmarAgregar()">Agregar al pallet</button>
+    </div>`;
+  document.getElementById('manualEAN').value = '';
+}
+
+function cambiarCantidad(delta) {
+  cantidadActual = Math.max(1, cantidadActual + delta);
+  document.getElementById('qtyVal').textContent = cantidadActual;
+}
+
+async function confirmarAgregar() {
+  const correlativo = document.getElementById('palletSelect').value;
+  if (!correlativo) { toast('Selecciona un pallet activo', true); return; }
+  const r = await api('agregarItem', { correlativo, ean: ultimoEANEncontrado, cantidad: cantidadActual });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast(`${r.nombre} agregado (${cantidadActual} un.)`);
+  const log = document.getElementById('scanLog');
+  if (log.querySelector('.empty-note')) log.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'mov-row';
+  row.style.background = 'var(--surface)';
+  row.style.border = '1px solid var(--line)';
+  row.style.borderRadius = '4px';
+  row.style.marginBottom = '6px';
+  row.innerHTML = `<div><div class="m-prod">${r.nombre}</div><div class="m-meta">${correlativo}</div></div><div class="m-meta">${cantidadActual} un.</div>`;
+  log.prepend(row);
+  document.getElementById('previewArea').innerHTML = '';
+}
+
+/* ======================= CONSULTAR ======================= */
+async function consultar() {
+  const texto = document.getElementById('consultaInput').value.trim();
+  if (!texto) return;
+  const r = await api('consultar', { texto });
+  const cont = document.getElementById('consultaResultados');
+  if (!r.ok) { toast(r.error, true); return; }
+  if (!r.pallets.length && !r.items.length) { cont.innerHTML = '<div class="empty-note">Sin resultados</div>'; return; }
+  let html = '';
+  if (r.pallets.length) {
+    html += '<div class="result-group"><h4>Pallets</h4>' + r.pallets.map(p => `
+      <div class="ticket" onclick="abrirDetalle('${p.Correlativo}')">
+        <div class="stripe ${p.Tipo}"></div><div class="hole"></div>
+        <div class="ticket-body"><div class="ticket-left"><div class="corr">${p.Correlativo}</div>
+        <div class="meta">${p.Estado}</div></div></div>
+      </div>`).join('') + '</div>';
+  }
+  if (r.items.length) {
+    html += '<div class="result-group"><h4>Items encontrados</h4>' + r.items.map(it => `
+      <div class="item-row" style="background:var(--surface);padding:12px 14px;border:1px solid var(--line);border-radius:4px;margin-bottom:6px;">
+        <div><div class="i-name">${it.Producto}</div><div class="i-code">${it.EAN} · ${it.SKU}</div></div>
+        <div style="text-align:right;"><div class="i-qty">${it.Cantidad} un.</div><div class="i-code">${it.Correlativo}</div></div>
+      </div>`).join('') + '</div>';
+  }
+  cont.innerHTML = html;
+}
+
+/* ======================= USUARIOS ======================= */
+async function loadUsuarios() {
+  const r = await api('listarUsuarios');
+  const cont = document.getElementById('userList');
+  if (!r.ok) { toast(r.error, true); return; }
+  cont.innerHTML = r.usuarios.map(u => `
+    <div class="user-row">
+      <div class="u-name">${u.usuario}</div>
+      <div class="u-rol ${u.rol === 'admin' ? 'admin' : ''}">${u.rol}</div>
+    </div>`).join('');
+}
+
+function mostrarNuevoUsuario() {
+  const f = document.getElementById('nuevoUsuarioForm');
+  f.style.display = f.style.display === 'none' ? 'block' : 'none';
+}
+
+async function crearUsuario() {
+  const nuevoUsuario = document.getElementById('nuUser').value.trim();
+  const pass = document.getElementById('nuPass').value;
+  const nuevoRol = document.getElementById('nuRol').value;
+  if (!nuevoUsuario || !pass) { toast('Completa usuario y clave', true); return; }
+  const nuevoHash = await sha256(pass);
+  const r = await api('crearUsuario', { nuevoUsuario, nuevoHash, nuevoRol });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Usuario creado');
+  document.getElementById('nuUser').value = '';
+  document.getElementById('nuPass').value = '';
+  mostrarNuevoUsuario();
+  loadUsuarios();
+}
+
+/* ======================= PWA ======================= */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+}
+
+/* ======================= INIT ======================= */
+if (session) startApp();
+</script>
+</body>
+</html>

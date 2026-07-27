@@ -809,7 +809,7 @@ function toggleScanner() {
   scanner.start(
     camaraConfig,
     {
-      fps: 15,
+      fps: 20,
       // Caja rectangular (no cuadrada): un código EAN es ancho y bajo, calza mejor
       // en un recuadro horizontal que en uno cuadrado, sobre todo en pantallas chicas.
       qrbox: { width: 280, height: 130 },
@@ -821,6 +821,12 @@ function toggleScanner() {
   ).then(() => {
     scannerRunning = true;
     document.getElementById('btnStartScan').textContent = 'Detener cámara';
+    // Pedimos enfoque continuo DESPUÉS de que la cámara ya está andando: así, si el
+    // equipo lo rechaza, solo se ignora este detalle en vez de tumbar la cámara entera
+    // (que es lo que pasaba al pedirlo de entrada en el getUserMedia inicial).
+    try {
+      scanner.applyVideoConstraints({ advanced: [{ focusMode: 'continuous' }] }).catch(() => {});
+    } catch (e) {}
   }).catch(() => toast('No se pudo acceder a la cámara', true));
 }
 

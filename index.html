@@ -805,12 +805,7 @@ function toggleScanner() {
     ],
     verbose: false
   });
-  const camaraConfig = {
-    facingMode: 'environment',
-    width: { ideal: 1920 },
-    height: { ideal: 1080 },
-    advanced: [{ focusMode: 'continuous' }] // pide enfoque continuo; si el equipo no lo soporta, se ignora sin error
-  };
+  const camaraConfig = { facingMode: 'environment' };
   scanner.start(
     camaraConfig,
     {

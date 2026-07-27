@@ -76,7 +76,7 @@ input,select{font-family:inherit;}
 }
 #hamburger{background:none;border:none;padding:6px;display:flex;flex-direction:column;gap:4px;}
 #hamburger span{display:block;width:22px;height:2px;background:#fff;}
-#topbar .brand{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.3px;}
+#topbar .brand{font-family:var(--font-display);font-weight:700;font-size:15px;letter-spacing:.3px;display:flex;align-items:center;}
 #topbar .brand em{color:var(--orange);font-style:normal;}
 #topbar .rolebadge{font-family:var(--font-mono);font-size:10px;background:var(--orange);color:#fff;padding:3px 7px;border-radius:2px;text-transform:uppercase;}
 
@@ -318,7 +318,9 @@ input,select{font-family:inherit;}
   <div id="shell" class="shell-hidden">
     <div id="topbar">
       <button id="hamburger" onclick="toggleDrawer(true)"><span></span><span></span><span></span></button>
-      <div class="brand">ET<em>+</em>BRANDS</div>
+      <div class="brand">
+        <img src="iconos/logo-mark.png" alt="ET Brands" style="height:22px;vertical-align:middle;margin-right:7px;">BRANDS
+      </div>
       <div class="rolebadge" id="roleBadge">—</div>
     </div>
 
@@ -419,7 +421,7 @@ input,select{font-family:inherit;}
       <div class="fab-row">
         <button class="btn btn-primary" onclick="mostrarNuevoUsuario()">+ Nuevo usuario</button>
       </div>
-      <div id="nuevoUsuarioForm" style="display:none;" class="login-card" style="margin-bottom:16px;">
+      <div id="nuevoUsuarioForm" style="display:none;margin-bottom:16px;" class="login-card">
         <div class="field"><label>Usuario</label><input id="nuUser" type="text"></div>
         <div class="field"><label>Clave</label><input id="nuPass" type="password"></div>
         <div class="field">
@@ -803,6 +805,10 @@ function toggleScanner() {
       Html5QrcodeSupportedFormats.CODE_128,
       Html5QrcodeSupportedFormats.CODE_39
     ],
+    // En Android/Chrome esto activa el motor nativo del sistema (BarcodeDetector),
+    // mucho más rápido y preciso que la librería JS. Safari en iPhone no lo tiene,
+    // así que ahí sigue usando la librería JS como fallback automático.
+    useBarCodeDetectorIfSupported: true,
     verbose: false
   });
   const camaraConfig = { facingMode: 'environment' };
@@ -983,11 +989,48 @@ async function loadUsuarios() {
   const r = await api('listarUsuarios');
   const cont = document.getElementById('userList');
   if (!r.ok) { toast(r.error, true); return; }
-  cont.innerHTML = r.usuarios.map(u => `
-    <div class="user-row">
-      <div class="u-name">${u.usuario}</div>
-      <div class="u-rol ${u.rol === 'admin' ? 'admin' : ''}">${u.rol}</div>
-    </div>`).join('');
+  cont.innerHTML = r.usuarios.map(u => {
+    const inactivo = String(u.activo).toUpperCase() === 'FALSE';
+    const esUnoMismo = u.usuario === session.usuario;
+    return `
+    <div class="user-row" style="${inactivo ? 'opacity:.55;' : ''}">
+      <div>
+        <div class="u-name">${u.usuario}${inactivo ? ' <span style="font-weight:400;color:var(--gray);">(inactivo)</span>' : ''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="u-rol ${u.rol === 'admin' ? 'admin' : ''}">${u.rol}</div>
+        <button class="chip" style="border:none;padding:4px 9px;font-size:14px;" onclick="editarUsuarioUI('${u.usuario}','${u.rol}')" title="Editar">✎</button>
+        ${!esUnoMismo ? `<button class="chip" style="border:none;padding:4px 9px;font-size:14px;color:var(--danger);" onclick="eliminarUsuarioUI('${u.usuario}')" title="Eliminar">🗑</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function editarUsuarioUI(usuario, rolActual) {
+  const nuevoRol = prompt(`Rol para "${usuario}" (escribe "admin" u "operario"):`, rolActual);
+  if (nuevoRol === null) return;
+  const rolLimpio = nuevoRol.trim().toLowerCase();
+  if (rolLimpio !== 'admin' && rolLimpio !== 'operario') { toast('Rol inválido, escribe admin u operario', true); return; }
+
+  const activar = confirm(`¿Debe estar ACTIVO "${usuario}"? Aceptar = activo, Cancelar = desactivarlo (no podrá iniciar sesión).`);
+
+  const nuevaClave = prompt('Nueva clave (déjalo en blanco para no cambiarla):', '');
+
+  const payload = { objetivo: usuario, nuevoRol: rolLimpio, activo: activar };
+  if (nuevaClave && nuevaClave.trim()) payload.nuevoHash = await sha256(nuevaClave.trim());
+
+  const r = await api('editarUsuario', payload);
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Usuario actualizado');
+  loadUsuarios();
+}
+
+async function eliminarUsuarioUI(usuario) {
+  if (!confirm(`¿Eliminar el usuario "${usuario}"? Esta acción no se puede deshacer.`)) return;
+  const r = await api('eliminarUsuario', { objetivo: usuario });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Usuario eliminado');
+  loadUsuarios();
 }
 
 function mostrarNuevoUsuario() {

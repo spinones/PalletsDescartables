@@ -213,6 +213,34 @@ input,select{font-family:inherit;}
 .section-gap{height:6px;}
 .shell-hidden{ display:none !important; }
 
+/* ---------- DOCUMENTO DE IMPRESIÓN ---------- */
+#printDoc{ display:none; }
+@media print{
+  body *{ visibility:hidden; }
+  #printDoc, #printDoc *{ visibility:visible; }
+  #printDoc{
+    display:block; position:absolute; top:0; left:0; width:100%;
+    background:#fff; padding:0; font-family:var(--font-body); color:#000;
+  }
+  .pd-head{ display:flex; justify-content:space-between; align-items:flex-end; border-bottom:4px solid #000; padding-bottom:14px; margin-bottom:18px; }
+  .pd-brand{ font-family:var(--font-display); font-weight:700; font-size:20px; letter-spacing:.5px; }
+  .pd-brand em{ color:var(--orange); font-style:normal; }
+  .pd-corr{ font-family:var(--font-mono); font-weight:700; font-size:42px; letter-spacing:1px; }
+  .pd-tipo-badge{ display:inline-block; font-family:var(--font-mono); font-size:13px; text-transform:uppercase; letter-spacing:1px; padding:4px 12px; border-radius:3px; color:#fff; margin-top:6px; }
+  .pd-tipo-badge.MER{ background:var(--orange); }
+  .pd-tipo-badge.REA{ background:var(--gray-dark); }
+  .pd-meta{ display:flex; gap:28px; font-size:12.5px; color:#333; margin-bottom:18px; }
+  .pd-meta b{ display:block; font-size:11px; text-transform:uppercase; color:#888; letter-spacing:.4px; margin-bottom:2px; font-weight:600; }
+  .pd-table{ width:100%; border-collapse:collapse; font-size:13px; }
+  .pd-table th{ text-align:left; text-transform:uppercase; font-size:10.5px; letter-spacing:.5px; color:#666; border-bottom:2px solid #000; padding:6px 8px; }
+  .pd-table td{ border-bottom:1px solid #ddd; padding:8px; }
+  .pd-table td.pd-qty{ font-family:var(--font-mono); font-weight:700; text-align:right; }
+  .pd-total-row td{ border-bottom:none; border-top:2px solid #000; font-weight:700; padding-top:10px; }
+  .pd-total-row td.pd-qty{ font-family:var(--font-mono); font-size:16px; }
+  .pd-foot{ margin-top:30px; display:flex; justify-content:space-between; font-size:11px; color:#888; border-top:1px solid #ddd; padding-top:10px; }
+  @page{ margin:14mm 12mm; }
+}
+
 /* ======================= DESKTOP (>=860px) ======================= */
 @media (min-width: 860px){
   body{ background:var(--ink); }
@@ -417,11 +445,17 @@ input,select{font-family:inherit;}
         <div class="corr" id="detCorr">—</div>
         <div class="meta" id="detMeta" style="font-size:12px;color:var(--gray-dark);margin-top:4px;"></div>
       </div>
-      <button class="chip" onclick="closeSheet()" style="border:none;font-size:20px;padding:0 6px;">✕</button>
+      <div style="display:flex;gap:8px;">
+        <button class="chip" onclick="imprimirPalletActual()" style="border:1.5px solid var(--line);font-size:16px;padding:6px 10px;" title="Imprimir">🖨</button>
+        <button class="chip" onclick="closeSheet()" style="border:none;font-size:20px;padding:0 6px;">✕</button>
+      </div>
     </div>
     <div id="detItems"></div>
     <div id="detActions" style="margin-top:16px;"></div>
   </div>
+
+  <!-- DOCUMENTO DE IMPRESIÓN: hoja física para pegar en el pallet -->
+  <div id="printDoc"></div>
 
   <div class="toast" id="toast"></div>
 </div>
@@ -593,19 +627,31 @@ async function crearPallet(tipo) {
   loadPallets();
 }
 
+let currentDetalleCorrelativo = null;
+let currentDetalleData = null;
+
 async function abrirDetalle(correlativo) {
+  currentDetalleCorrelativo = correlativo;
   const r = await api('detallePallet', { correlativo });
   if (!r.ok) { toast(r.error, true); return; }
+  currentDetalleData = r;
   document.getElementById('detCorr').textContent = r.pallet.Correlativo;
   document.getElementById('detMeta').textContent =
     `${r.pallet.Tipo === 'MER' ? 'Merma' : 'Reacondicionable'} · ${r.pallet.Estado} · Creado por ${r.pallet.CreadoPor}`;
 
+  const esAdmin = session.rol === 'admin';
   const itemsCont = document.getElementById('detItems');
   itemsCont.innerHTML = r.items.length
     ? r.items.map(it => `
         <div class="item-row">
           <div><div class="i-name">${it.Producto || 'Sin identificar'}</div><div class="i-code">${it.EAN} · ${it.SKU || 's/sku'}</div></div>
-          <div class="i-qty">${it.Cantidad}</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <div class="i-qty">${it.Cantidad}</div>
+            ${esAdmin ? `
+              <button class="chip" style="border:none;padding:4px 9px;font-size:14px;" onclick="editarItem('${it.ID}','${it.EAN}',${it.Cantidad})" title="Editar">✎</button>
+              <button class="chip" style="border:none;padding:4px 9px;font-size:14px;color:var(--danger);" onclick="eliminarItem('${it.ID}')" title="Eliminar">🗑</button>
+            ` : ''}
+          </div>
         </div>`).join('')
     : '<div class="empty-note">Sin items registrados</div>';
 
@@ -619,6 +665,75 @@ async function abrirDetalle(correlativo) {
     actions.appendChild(btn);
   }
   openSheet();
+}
+
+async function editarItem(id, eanActual, cantidadActual) {
+  const nuevoEAN = prompt('EAN / código del producto:', eanActual);
+  if (nuevoEAN === null) return;
+  const nuevaCantidadStr = prompt('Cantidad:', cantidadActual);
+  if (nuevaCantidadStr === null) return;
+  const nuevaCantidad = parseInt(nuevaCantidadStr, 10);
+  if (!nuevoEAN.trim() || isNaN(nuevaCantidad) || nuevaCantidad <= 0) { toast('Datos inválidos', true); return; }
+
+  const r = await api('editarItem', { id, ean: nuevoEAN.trim(), cantidad: nuevaCantidad });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Item actualizado');
+  abrirDetalle(currentDetalleCorrelativo);
+  loadPallets();
+}
+
+async function eliminarItem(id) {
+  if (!confirm('¿Eliminar este item del pallet? Esta acción no se puede deshacer.')) return;
+  const r = await api('eliminarItem', { id });
+  if (!r.ok) { toast(r.error, true); return; }
+  toast('Item eliminado');
+  abrirDetalle(currentDetalleCorrelativo);
+  loadPallets();
+}
+
+function imprimirPalletActual() {
+  if (!currentDetalleData) return;
+  const { pallet, items } = currentDetalleData;
+  const tipoTexto = pallet.Tipo === 'MER' ? 'Merma' : 'Reacondicionable';
+  const totalUnidades = items.reduce((s, it) => s + Number(it.Cantidad || 0), 0);
+
+  const filas = items.length
+    ? items.map(it => `
+        <tr>
+          <td>${it.Producto || 'Sin identificar'}</td>
+          <td>${it.SKU || 's/sku'}</td>
+          <td>${it.EAN}</td>
+          <td class="pd-qty">${it.Cantidad}</td>
+        </tr>`).join('')
+    : '<tr><td colspan="4" style="color:#999;">Sin items registrados</td></tr>';
+
+  document.getElementById('printDoc').innerHTML = `
+    <div class="pd-head">
+      <div>
+        <div class="pd-brand">ET<em>+</em>BRANDS</div>
+        <div class="pd-tipo-badge ${pallet.Tipo}">${tipoTexto}</div>
+      </div>
+      <div class="pd-corr">${pallet.Correlativo}</div>
+    </div>
+    <div class="pd-meta">
+      <div><b>Estado</b>${pallet.Estado}</div>
+      <div><b>Creado por</b>${pallet.CreadoPor}</div>
+      <div><b>Fecha creación</b>${fmtFecha(pallet.FechaCreacion)}</div>
+      <div><b>Total unidades</b>${totalUnidades}</div>
+    </div>
+    <table class="pd-table">
+      <thead><tr><th>Producto</th><th>SKU</th><th>EAN</th><th style="text-align:right;">Cant.</th></tr></thead>
+      <tbody>
+        ${filas}
+        <tr class="pd-total-row"><td colspan="3">TOTAL</td><td class="pd-qty">${totalUnidades}</td></tr>
+      </tbody>
+    </table>
+    <div class="pd-foot">
+      <span>Pallets Merma/Reacondicionable — ET Brands</span>
+      <span>Impreso ${fmtFecha(new Date())}</span>
+    </div>`;
+
+  window.print();
 }
 
 async function cerrarPallet(correlativo) {

@@ -668,14 +668,18 @@ async function abrirDetalle(correlativo) {
 }
 
 async function editarItem(id, eanActual, cantidadActual) {
-  const nuevoEAN = prompt('EAN / código del producto:', eanActual);
-  if (nuevoEAN === null) return;
+  const nuevoValor = prompt('EAN o SKU del producto:', eanActual);
+  if (nuevoValor === null) return;
   const nuevaCantidadStr = prompt('Cantidad:', cantidadActual);
   if (nuevaCantidadStr === null) return;
   const nuevaCantidad = parseInt(nuevaCantidadStr, 10);
-  if (!nuevoEAN.trim() || isNaN(nuevaCantidad) || nuevaCantidad <= 0) { toast('Datos inválidos', true); return; }
+  if (!nuevoValor.trim() || isNaN(nuevaCantidad) || nuevaCantidad <= 0) { toast('Datos inválidos', true); return; }
 
-  const r = await api('editarItem', { id, ean: nuevoEAN.trim(), cantidad: nuevaCantidad });
+  const valor = nuevoValor.trim();
+  const esEAN = /^\d+$/.test(valor); // solo números -> EAN; cualquier otra cosa -> SKU
+  const payload = esEAN ? { id, ean: valor, cantidad: nuevaCantidad } : { id, sku: valor, cantidad: nuevaCantidad };
+
+  const r = await api('editarItem', payload);
   if (!r.ok) { toast(r.error, true); return; }
   toast('Item actualizado');
   abrirDetalle(currentDetalleCorrelativo);

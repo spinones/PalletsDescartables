@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Pallets Merma/Reacondicionable — ET Brands</title>
 <link rel="manifest" href="manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="iconos/icon-32.png">
-<link rel="apple-touch-icon" sizes="180x180" href="iconos/icon-180.png">
+<link rel="icon" type="image/png" sizes="32x32" href="icon-32.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <meta name="theme-color" content="#000000">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
@@ -211,6 +211,54 @@ input,select{font-family:inherit;}
 .toast.err{background:var(--danger);}
 
 .section-gap{height:6px;}
+
+/* ======================= DESKTOP (>=860px) ======================= */
+@media (min-width: 860px){
+  body{ background:var(--ink); }
+  #app{
+    max-width:1180px; min-height:100vh; background:var(--bg);
+    box-shadow:0 0 60px rgba(0,0,0,.35);
+  }
+
+  /* Login: mismo diseño centrado, solo un poco más de aire */
+  #loginView{ min-height:100vh; }
+
+  /* Shell pasa a layout de 2 columnas: sidebar fija + contenido */
+  #shell{ display:grid; grid-template-columns:250px 1fr; align-items:start; min-height:100vh; }
+
+  #hamburger{ display:none; }
+  #topbar{ grid-column:2; position:sticky; top:0; padding:16px 28px; }
+  #topbar .brand{ font-size:16px; }
+
+  #drawerOverlay{ display:none !important; }
+  #drawer{
+    position:sticky !important; top:0; left:0; grid-column:1; grid-row:1 / -1;
+    height:100vh; width:100%; max-width:none; transform:none !important;
+    border-right:1px solid #262626;
+  }
+
+  .view{ grid-column:2; padding:26px 32px 40px; max-width:920px; }
+
+  .kpi-grid{ grid-template-columns:repeat(4,1fr); gap:14px; }
+  .chart-card canvas{ max-height:220px; }
+
+  .pallet-list{ display:grid; grid-template-columns:repeat(auto-fill, minmax(300px,1fr)); gap:14px; }
+
+  .fab-row{ max-width:520px; }
+  .scan-target-box, #readerBox, .scan-manual, .preview-card{ max-width:480px; }
+  .search-box{ max-width:560px; }
+
+  /* Detalle de pallet: modal centrado en vez de hoja inferior */
+  #detailSheet{
+    left:50%; right:auto; bottom:auto; top:50%; margin:0; width:460px; max-width:90vw;
+    border-radius:14px; max-height:80vh; transform:translate(-50%,-46%) !important; opacity:0;
+    transition:transform .22s ease, opacity .22s ease;
+  }
+  #detailSheet.open{ transform:translate(-50%,-50%) !important; opacity:1; }
+  #sheetOverlay{ background:rgba(0,0,0,.45); }
+
+  .login-error{ min-height:16px; }
+}
 </style>
 </head>
 <body>
@@ -219,7 +267,7 @@ input,select{font-family:inherit;}
   <!-- LOGIN -->
   <div id="loginView">
     <div class="login-logo">
-      <img src="iconos/icon-192.png" alt="ET Brands" style="width:88px;height:88px;">
+      <img src="icon-192.png" alt="ET Brands" style="width:88px;height:88px;">
     </div>
     <p class="login-title">ET BRANDS</p>
     <p class="login-sub">Pallets Merma &amp; Reacondicionable</p>

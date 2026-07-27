@@ -629,10 +629,13 @@ async function crearPallet(tipo) {
 
 let currentDetalleCorrelativo = null;
 let currentDetalleData = null;
+let detalleRequestId = 0;
 
 async function abrirDetalle(correlativo) {
+  const requestId = ++detalleRequestId;
   currentDetalleCorrelativo = correlativo;
   const r = await api('detallePallet', { correlativo });
+  if (requestId !== detalleRequestId) return; // ya se abrió/cerró otra cosa mientras esperábamos esta respuesta
   if (!r.ok) { toast(r.error, true); return; }
   currentDetalleData = r;
   document.getElementById('detCorr').textContent = r.pallet.Correlativo;
@@ -772,6 +775,7 @@ function openSheet() {
   document.getElementById('detailSheet').classList.add('open');
 }
 function closeSheet() {
+  detalleRequestId++; // invalida cualquier abrirDetalle() todavía esperando respuesta
   document.getElementById('sheetOverlay').classList.remove('open');
   document.getElementById('detailSheet').classList.remove('open');
 }

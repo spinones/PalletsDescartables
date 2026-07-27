@@ -211,6 +211,7 @@ input,select{font-family:inherit;}
 .toast.err{background:var(--danger);}
 
 .section-gap{height:6px;}
+.shell-hidden{ display:none !important; }
 
 /* ======================= DESKTOP (>=860px) ======================= */
 @media (min-width: 860px){
@@ -286,7 +287,7 @@ input,select{font-family:inherit;}
   </div>
 
   <!-- APP SHELL -->
-  <div id="shell" style="display:none;">
+  <div id="shell" class="shell-hidden">
     <div id="topbar">
       <button id="hamburger" onclick="toggleDrawer(true)"><span></span><span></span><span></span></button>
       <div class="brand">ET<em>+</em>BRANDS</div>
@@ -515,7 +516,7 @@ function goView(view) {
 
 function startApp() {
   document.getElementById('loginView').style.display = 'none';
-  document.getElementById('shell').style.display = 'block';
+  document.getElementById('shell').classList.remove('shell-hidden');
   document.getElementById('roleBadge').textContent = session.rol;
   document.getElementById('drawerName').textContent = session.usuario;
   document.getElementById('drawerRol').textContent = session.rol;
